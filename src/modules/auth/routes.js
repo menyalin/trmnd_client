@@ -13,12 +13,6 @@ export default [
         name: 'SignUp',
         component: () => import('./pages/signUp'),
       },
-      {
-        path: 'confirm',
-        name: 'ConfirmEmail',
-        component: () => import('./pages/confirmEmail'),
-        props: true,
-      },
     ],
   },
 ]

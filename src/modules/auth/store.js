@@ -1,87 +1,76 @@
-import { Auth, Hub } from 'aws-amplify'
-
-const _authListener = (store) => (data) => {
-  console.log('authListener', data)
-  if (data.payload?.event === 'signIn') store.dispatch('initAuthState')
-  if (data.payload?.event === 'signOut') store.commit('setUser', null)
-  if (data.payload?.event === 'tokenRefresh') console.log('m: refresh token')
-  if (data.payload?.event === 'tokenRefresh_failure')
-    console.log('m: refresh token failure')
-}
+import AuthService from './auth.service.js'
 
 export const authPlugin = (store) => {
-  Hub.listen('auth', _authListener(store))
   store.dispatch('initAuthState')
 }
 
 export const AuthModule = {
   state: {
     user: null,
+    loggedIn: false,
+    authChecked: false,
   },
   mutations: {
-    initAuthModule() {
-      console.log('initModule')
-    },
     setUser(state, payload) {
       state.user = payload
+      state.loggedIn = true
+    },
+    logout(state) {
+      state.user = {}
+      state.loggedIn = false
+    },
+    setAuthChecked(state, payload) {
+      state.authChecked = payload
     },
   },
   actions: {
-    async initAuthState({ commit }) {
-      try {
-        const user = await Auth.currentAuthenticatedUser()
-        if (!user?.signInUserSession) {
-          console.log('ошибка')
-          return null
+    initAuthState({ commit }) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const { data } = await AuthService.checkAuth()
+          if (data) {
+            commit('setUser', data.user)
+          }
+          commit('setAppLoading', false)
+          commit('setAuthChecked', true)
+          resolve()
+        } catch (e) {
+          commit('setAppLoading', false)
+          commit('setAuthChecked', true)
+          resolve()
         }
-        commit('setUser', {
-          username: user.username,
-          atributes: user.attributes,
-        })
-      } catch (e) {
-        console.log('e:', e)
-      }
+      })
     },
-    async signOut() {
-      await Auth.signOut()
-    },
-    async signIn({ commit }, { email, password }) {
+
+    async signIn({ commit }, { name, password }) {
       try {
-        const user = await Auth.signIn(email, password)
+        const { user } = await AuthService.login({ name, password })
         commit('setUser', user)
         return { user, status: 'success' }
       } catch (e) {
-        console.log('signIn error:', e)
-        return { status: 'error', message: e.message }
+        return { status: 'error', message: e.response?.data }
       }
     },
-    async signUp({ commit }, { name, email, password }) {
+    async signUp({ commit }, { name, password }) {
       try {
-        const { user } = await Auth.signUp({
-          username: email,
-          password,
-          attributes: {
-            email,
-            name,
-          },
-        })
+        const { user } = await AuthService.registration({ name, password })
         commit('setUser', user)
         return { user, status: 'success' }
       } catch (e) {
-        console.log('signUp error:', e)
-        return { status: 'error', message: e.message }
+        return { status: 'error', message: e.response?.data }
       }
     },
-    async confirmSignUp({ commit }, { username, code }) {
+
+    async logout({ commit }) {
       try {
-        await Auth.confirmSignUp(username, code)
-        return { status: 'ok' }
-      } catch (e) {
-        console.log('confirmSignUp error:', e)
-      }
+        await AuthService.logout()
+        commit('logout')
+      } catch (e) {}
     },
   },
   getters: {
     user: ({ user }) => user,
+    loggedIn: ({ loggedIn }) => loggedIn,
+    authChecked: ({ authChecked }) => authChecked,
   },
 }

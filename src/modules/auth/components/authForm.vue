@@ -2,7 +2,7 @@
   <div class="form-wrapper">
     <v-alert
       v-if="message"
-      type="info"
+      type="warning"
       dismissible
       transition="fade-transition"
       @input="closeAlert"
@@ -14,23 +14,15 @@
         <v-card-title>{{ title }}</v-card-title>
         <v-card-text>
           <v-text-field
-            v-model.trim="$v.email.$model"
-            type="Email"
-            label="Email"
-            :errorMessages="emailErrors"
-            @blur="$v.email.$touch()"
-          />
-          <v-text-field
-            v-if="type === 'signUp'"
             v-model.trim="$v.name.$model"
-            label="Имя"
+            label="Name"
             :errorMessages="nameErrors"
             @blur="$v.name.$touch()"
           />
           <v-text-field
             v-model.trim="$v.password.$model"
             type="Password"
-            label="Пароль"
+            label="Password"
             :errorMessages="passwordErrors"
             @blur="$v.password.$touch()"
           />
@@ -38,29 +30,41 @@
             v-if="type === 'signUp'"
             v-model="$v.confirmPassword.$model"
             type="Password"
-            label="Повторите пароль"
+            label="Confirm password"
             :errorMessages="confirmPasswordErrors"
             @blur="$v.confirmPassword.$touch()"
           />
         </v-card-text>
         <v-card-actions>
-          <div class="actions-wrapper">
-            <v-btn
-              color="primary"
-              :disabled="invalidForm || loading"
-              :loading="loading"
-              @click="submitHandler"
-            >
-              {{ submitButtonTitle }}
-            </v-btn>
-          </div>
+          <router-link
+            v-if="type === 'signIn'"
+            to="/auth/signUp"
+          >
+            Sign Up
+          </router-link>
+          <router-link
+            v-if="type === 'signUp'"
+            to="/auth/signIn"
+          >
+            Already registered?
+          </router-link>
+          <v-spacer />
+          <v-btn
+            color="primary"
+            :disabled="invalidForm || loading"
+            :loading="loading"
+            @click="submitHandler"
+          >
+            {{ submitButtonTitle }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </form>
   </div>
 </template>
 <script>
-import { required, email, sameAs } from 'vuelidate/lib/validators'
+import { required, sameAs, minLength } from 'vuelidate/lib/validators'
+
 export default {
   name: 'AuthForm',
   props: {
@@ -78,7 +82,6 @@ export default {
   },
   data() {
     return {
-      email: null,
       name: null,
       password: null,
       confirmPassword: null,
@@ -88,69 +91,53 @@ export default {
     invalidForm() {
       return this.$v.$invalid
     },
-    emailErrors() {
-      let errors = []
-      if (this.$v.email.$dirty && !this.$v.email.required)
-        errors.push('Поле не может быть пустым')
-      if (this.$v.email.$dirty && !this.$v.email.email)
-        errors.push('Не корректный Email')
-      return errors
-    },
     nameErrors() {
       let errors = []
       if (this.$v.name.$dirty && !this.$v.name.required)
-        errors.push('Поле не может быть пустым')
+        errors.push('Name required')
       return errors
     },
     passwordErrors() {
       let errors = []
       if (this.$v.password.$dirty && !this.$v.password.required)
-        errors.push('Поле не может быть пустым')
+        errors.push('Password required')
+      if (this.$v.password.$dirty && !this.$v.password.minLength)
+        errors.push('Too short password')
       return errors
     },
     confirmPasswordErrors() {
       let errors = []
       if (this.$v.confirmPassword.$dirty && !this.$v.confirmPassword.required)
-        errors.push('Поле не может быть пустым')
+        errors.push('Confirm password required')
       if (this.$v.confirmPassword.$dirty && !this.$v.confirmPassword.sameAs)
-        errors.push('Пароли не совпадают')
+        errors.push('The entered passwords are not the same')
       return errors
     },
   },
   validations() {
+    const baseParams = {
+      name: {
+        required,
+      },
+      password: {
+        required,
+        minLength: minLength(4),
+      },
+    }
     if (this.type === 'signUp')
       return {
-        email: {
-          required,
-          email,
-        },
-        name: {
-          required,
-        },
-        password: {
-          required,
-        },
+        ...baseParams,
         confirmPassword: {
           required,
           sameAs: sameAs('password'),
         },
       }
-    else if (this.type === 'signIn')
-      return {
-        email: {
-          required,
-          email,
-        },
-        password: {
-          required,
-        },
-      }
+    else return baseParams
   },
   methods: {
     submitHandler() {
       if (this.invalidForm) return null
       this.$emit('submit', {
-        email: this.email,
         name: this.name,
         password: this.password,
       })
@@ -167,5 +154,11 @@ export default {
   padding: 10px;
   margin: 0 auto;
   margin-top: 100px;
+}
+.actions-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
 }
 </style>

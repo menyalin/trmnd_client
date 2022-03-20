@@ -1,11 +1,23 @@
-import Vue from "vue";
-import Vuex from "vuex";
+import Vue from 'vue'
+import Vuex from 'vuex'
+import { AuthModule } from '@/modules/auth/store'
 
-Vue.use(Vuex);
+Vue.use(Vuex)
 
 export default new Vuex.Store({
-  state: {},
-  mutations: {},
+  state: {
+    appLoading: true,
+  },
+  mutations: {
+    setAppLoading(state, payload) {
+      state.appLoading = payload
+    },
+  },
   actions: {},
-  modules: {},
-});
+  getters: {
+    appLoading: ({ appLoading }) => appLoading,
+  },
+  modules: {
+    AuthModule,
+  },
+})

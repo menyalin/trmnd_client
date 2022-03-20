@@ -1,10 +1,10 @@
 <template>
   <app-auth-form
-    title="Форма авторизации"
+    title="Sign In"
     type="signIn"
     :message="message"
     :loading="loading"
-    submitButtonTitle="Войти"
+    submitButtonTitle="sign in"
     @submit="submit"
     @closeAlert="crearError"
   />
@@ -24,20 +24,15 @@ export default {
     }
   },
   methods: {
-    async submit({ email, password }) {
+    async submit({ name, password }) {
       this.loading = true
-      const { user, status, message } = await this.$store.dispatch('signIn', {
-        email,
+      const { status, message } = await this.$store.dispatch('signIn', {
+        name,
         password,
       })
       this.loading = false
-      if (status === 'error') {
-        this.message = message
-      }
-      if (status === 'success' && !!user?.username)
-        this.$router.push({
-          name: 'HomePage',
-        })
+      if (status === 'success') this.$router.push('/')
+      else if (status === 'error') this.message = message
     },
     crearError() {
       this.message = null

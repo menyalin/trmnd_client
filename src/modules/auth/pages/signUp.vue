@@ -1,10 +1,10 @@
 <template>
   <app-auth-form
-    title="Форма регистрации"
+    title="Sign Up"
     :message="message"
     type="signUp"
     :loading="loading"
-    submitButtonTitle="Создать запись"
+    submitButtonTitle="Sign Up"
     @submit="submit"
     @closeAlert="crearError"
   />
@@ -24,22 +24,18 @@ export default {
     }
   },
   methods: {
-    async submit({ email, password, name }) {
+    async submit({ password, name }) {
       this.loading = true
-      const { user, status, message } = await this.$store.dispatch('signUp', {
-        email,
+      const { status, message } = await this.$store.dispatch('signUp', {
         password,
         name,
       })
       this.loading = false
-      if (status === 'error') {
+      if (status === 'success') {
+        this.$router.push('/')
+      } else {
         this.message = message
       }
-      if (status === 'success' && !!user?.username)
-        this.$router.push({
-          name: 'ConfirmEmail',
-          params: { username: user?.username },
-        })
     },
     crearError() {
       this.message = null
