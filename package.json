@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
+    "build": "vue-cli-service build && docker build -t menyalin/trmnd_front:latest . && docker image push menyalin/trmnd_front:latest",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
